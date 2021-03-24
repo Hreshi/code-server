@@ -3,7 +3,7 @@
 import socket
 import os
 import sys
-from threading import Thread
+from threading import Thread, Condition
 from time import sleep
 from queue import Queue
 
@@ -107,7 +107,8 @@ class Client(Thread):
 
 			# wait for Request_queue to finish processing request
 			if self.init_req[0] == "create":
-				sleep(2)
+				while not self.can_run:
+					sleep(1)
 			self.sock.send(self.get_length(self.response).encode('utf8'))
 			self.sock.send(self.response.encode('utf8'))
 
@@ -118,7 +119,7 @@ class Client(Thread):
 						message = self.sock.recv(length).decode('utf8')
 					except:
 						print("can't read from host")
-						break
+						message = "host_gone"
 					meeting = Server.meeting_list[self.init_req[2]]
 					for user in meeting.participant:
 						conn = user.sock
