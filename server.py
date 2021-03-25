@@ -106,13 +106,13 @@ class Client(Thread):
 
 		return "2:ERROR"
 
-	def voice_broadcast(self, data):
-		meeting = Server.meeting_list[self.init_req[2]]
+	def voice_broadcast(self, data, meeting):
 
 		for user in meeting.audio_group:
 			conn = user.sock
 			if conn == self.sock:
 				continue
+
 			try:
 				conn.send(data)
 			except Exception as e:
@@ -164,13 +164,14 @@ class Client(Thread):
 							meeting.participant.remove(user)
 
 			elif self.init_req[0] == "audio":
+				meeting = Server.meeting_list[self.init_req[2]]
 				while not self.kill_thread:
 					try:
 						data = self.sock.recv(1024)
+						self.voice_broadcast(data, meeting)
 					except Exception as e:
-						self.kill_thread = True
-					else:
-						self.voice_broadcast(data)
+						pass
+					
 		else:
 			self.sock.send(self.get_length("Incorrect request!").encode('utf8'))
 			self.sock.send("Incorrect request!".encode('utf8'))
@@ -183,7 +184,7 @@ class Client(Thread):
 
 class Server:
 	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	meeting_list, host = {}, "127.0.0.1"
+	meeting_list, host = {}, ""
 
 	def __init__(self, port):
 		self.port = port
@@ -209,17 +210,17 @@ class Server:
 	def start(self):
 		self.prepare()
 		run = True
-		while True:
-			if run == True:
-				try:
-					sock, addr = self.server.accept()
-					print("user connected!")
-				except Exception as e:
-					print("server stopped accepting users!")
-					run = False
-				else:
-					client = Client(sock)
-					client.start()
+		while run:
+			
+			try:
+				sock, addr = self.server.accept()
+				print("user connected!")
+			except Exception as e:
+				print("server stopped accepting users!")
+				run = False
+			else:
+				client = Client(sock)
+				client.start()
 		self.server.close()
 
 # main code execution here

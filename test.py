@@ -21,34 +21,25 @@ class Voice_chat(Thread):
 		self.init_req    = "audio:" + self.username + ":" + self.meeting_key + ":" + self.meeting_val
 		self.audio_player = pyaudio.PyAudio()
 		self.playing_stream = self.audio_player.open(format=pyaudio.paInt16, channels=1, rate=20000, output=True, frames_per_buffer=1024)
-		self.recording_stream = self.audio_player.open(format=pyaudio.paInt16, channels=1, rate=20000, output=True, frames_per_buffer=1024)
-   		self.kill_thread = False
+		self.recording_stream = self.audio_player.open(format=pyaudio.paInt16, channels=1, rate=20000, input=True, frames_per_buffer=1024)
+		self.kill_thread = False
 
 	def receive_audio(self):
 		while not self.kill_thread:
 			try:
 				data = self.sock.recv(1024)
-			except Exception as e:
-				print("[AUDIO:SERVER]![cannot recieve audio from server]!")
-				self.kill_thread = True
-				sleep(1)
-			else:
 				self.playing_stream.write(data)
+			except Exception as e:
+				pass
 
 
 	def send_audio(self):
 		while not self.kill_thread:
 			try:
 				data = self.recording_stream.read(1024)
+				self.sock.send(data)
 			except Exception as e:
-				print("[AUDIO:CLIENT]![cannot record audio]")
-				sleep(1)
-				self.kill_thread = True
-			else:
-				try:
-					self.sock.send(data)
-				except Exception as e:
-					print("[AUDIO:SERVER]![cannot send to server]")
+				pass
 
 
 	def run(self):
@@ -76,7 +67,7 @@ class Voice_chat(Thread):
 
 		print(message)
 		if "1" in message:
-			thread = Thread(target = self.send_audio, args = ()).start()
+			thread = Thread(target = self.send_audio).start()
 			self.receive_audio()
 		else:
 			print("[AUDIO:CLIENT]![Incorrect creadentials]")
