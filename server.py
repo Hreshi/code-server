@@ -46,6 +46,7 @@ class Meeting:
 		self.host_sock   = client.sock
 		self.host_name   = client.username
 		self.participant = []
+		self.audio_group = []
 
 	def join(self, client):
 		self.participant.append(client)
@@ -65,10 +66,11 @@ class Client(Thread):
 		self.message = ""
 		self.response = "Invalid request! Try again"
 		self.can_run = False
+		self.kill_thread = False
 
 	def valid_request(self):
 		# returns tru if request is valid
-		return len(self.init_req) == 4 and self.init_req[0] in ["join", "create"]
+		return len(self.init_req) == 4 and self.init_req[0] in ["join", "create", "audio"]
 
 	def get_length(self, message):
 		length = str(len(message));
@@ -91,6 +93,31 @@ class Client(Thread):
 	def create_request(self):
 		Request_queue.request_queue.put(self)
 
+	def join_audio(self):
+		if self.init_req[2] in Server.meeting_list:
+			meeting = Server.meeting_list[self.init_req[2]]
+			if self.init_req[3] == meeting.meeting_val:
+				meeting.audio_group.append(self)
+				return "1:success"
+			else:
+				return "0:Incorrect credentials!"
+		else:
+			return "0:Meeting does not exist!"
+
+		return "2:ERROR"
+
+	def voice_broadcast(self, data):
+		meeting = Server.meeting_list[self.init_req[2]]
+
+		for user in meeting.audio_group:
+			conn = user.sock
+			if conn == self.sock:
+				continue
+			try:
+				conn.send(data)
+			except Exception as e:
+				pass
+
 	# thread starts here
 	def run(self):
 		length = int(self.sock.recv(BUFFER).decode('utf8'))
@@ -104,22 +131,27 @@ class Client(Thread):
 				self.response = self.join_request()
 			elif self.init_req[0] == "create":
 				self.create_request()
+			elif self.init_req[0] == "audio":
+				self.response = self.join_audio()
 
 			# wait for Request_queue to finish processing request
 			if self.init_req[0] == "create":
 				while not self.can_run:
 					sleep(1)
+					
 			self.sock.send(self.get_length(self.response).encode('utf8'))
 			self.sock.send(self.response.encode('utf8'))
 
-			if "1" in self.response:
-				while True:
+
+			if "1" in self.response and self.init_req[0] != "audio":
+				while not self.kill_thread:
 					try:
 						length = int(self.sock.recv(BUFFER).decode('utf8'))
 						message = self.sock.recv(length).decode('utf8')
 					except:
 						print("can't read from host")
 						message = "host_gone"
+						self.kill_thread = True
 					meeting = Server.meeting_list[self.init_req[2]]
 					for user in meeting.participant:
 						conn = user.sock
@@ -130,6 +162,15 @@ class Client(Thread):
 							conn.send(message.encode('utf8'))
 						except Exception as e:
 							meeting.participant.remove(user)
+
+			elif self.init_req[0] == "audio":
+				while not self.kill_thread:
+					try:
+						data = self.sock.recv(1024)
+					except Exception as e:
+						self.kill_thread = True
+					else:
+						self.voice_broadcast(data)
 		else:
 			self.sock.send(self.get_length("Incorrect request!").encode('utf8'))
 			self.sock.send("Incorrect request!".encode('utf8'))
