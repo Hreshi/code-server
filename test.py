@@ -1,7 +1,7 @@
 # this file is only for testing the server. In case of java server add \n to message before sending
 
 import socket
-import pyaudio
+# import pyaudio
 from time import sleep
 from threading import Thread;
 

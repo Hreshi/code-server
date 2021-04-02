@@ -1,5 +1,3 @@
-# this is server written in python
-
 import socket
 import os
 import sys
