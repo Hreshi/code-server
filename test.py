@@ -1,11 +1,16 @@
 # this file is only for testing the server. In case of java server add \n to message before sending
+# to install pyaudio
+# sudo apt-get install libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0
+# sudo apt-get install ffmpeg libav-tools
+# sudo pip install pyaudio
+
 
 import socket
-# import pyaudio
+import pyaudio
 from time import sleep
 from threading import Thread;
 
-HOST, PORT, BUFFER = "", 5000, 10
+HOST, PORT, BUFFER = "8.tcp.ngrok.io", 16931, 10
 
 
 # voice chat is second thread in client
