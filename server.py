@@ -67,7 +67,7 @@ class Client(Thread):
 		self.kill_thread = False
 
 	def valid_request(self):
-		# returns tru if request is valid
+		# returns true if request is valid
 		return len(self.init_req) == 4 and self.init_req[0] in ["join", "create", "audio"]
 
 	def get_length(self, message):
@@ -129,13 +129,10 @@ class Client(Thread):
 				self.response = self.join_request()
 			elif self.init_req[0] == "create":
 				self.create_request()
-			elif self.init_req[0] == "audio":
-				self.response = self.join_audio()
-
-			# wait for Request_queue to finish processing request
-			if self.init_req[0] == "create":
 				while not self.can_run:
 					sleep(1)
+			elif self.init_req[0] == "audio":
+				self.response = self.join_audio()
 					
 			self.sock.send(self.get_length(self.response).encode('utf8'))
 			self.sock.send(self.response.encode('utf8'))
@@ -165,7 +162,7 @@ class Client(Thread):
 				meeting = Server.meeting_list[self.init_req[2]]
 				while not self.kill_thread:
 					try:
-						data = self.sock.recv(1024)
+						data = self.sock.recv(100)
 						self.voice_broadcast(data, meeting)
 					except Exception as e:
 						pass
