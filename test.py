@@ -9,7 +9,7 @@ import pyaudio
 from time import sleep
 from threading import Thread;
 
-HOST, PORT, BUFFER = "", 5000, 10
+HOST, PORT, BUFFER, FRAMES = "0.tcp.ngrok.io", 12765, 10, 500
 
 
 # voice chat is second thread in client
@@ -24,14 +24,14 @@ class Voice_chat(Thread):
 		self.username    = req_list[1]
 		self.init_req    = "audio:" + self.username + ":" + self.meeting_key + ":" + self.meeting_val
 		self.audio_player = pyaudio.PyAudio()
-		self.playing_stream = self.audio_player.open(format=pyaudio.paInt16, channels=1, rate=20000, output=True, frames_per_buffer=100)
-		self.recording_stream = self.audio_player.open(format=pyaudio.paInt16, channels=1, rate=20000, input=True, frames_per_buffer=100)
+		self.playing_stream = self.audio_player.open(format=pyaudio.paInt16, channels=1, rate=20000, output=True, frames_per_buffer=FRAMES)
+		self.recording_stream = self.audio_player.open(format=pyaudio.paInt16, channels=1, rate=20000, input=True, frames_per_buffer=FRAMES)
 		self.kill_thread = False
 
 	def receive_audio(self):
 		while not self.kill_thread:
 			try:
-				data = self.sock.recv(100)
+				data = self.sock.recv(FRAMES)
 				self.playing_stream.write(data)
 			except Exception as e:
 				print("cannot play audio : ", e)
@@ -40,7 +40,7 @@ class Voice_chat(Thread):
 	def send_audio(self):
 		while not self.kill_thread:
 			try:
-				data = self.recording_stream.read(100)
+				data = self.recording_stream.read(FRAMES)
 				self.sock.send(data)
 			except Exception as e:
 				print("cannot record audio : ", e)
