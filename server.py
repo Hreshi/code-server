@@ -133,10 +133,12 @@ class Client(Thread):
 					sleep(1)
 			elif self.init_req[0] == "audio":
 				self.response = self.join_audio()
-					
-			self.sock.send(self.get_length(self.response).encode('utf8'))
-			self.sock.send(self.response.encode('utf8'))
-
+			
+			try:		
+				self.sock.send(self.get_length(self.response).encode('utf8'))
+				self.sock.send(self.response.encode('utf8'))
+			except Exception as e:
+				pass
 
 			if "1" in self.response and self.init_req[0] != "audio":
 				while not self.kill_thread:
@@ -168,8 +170,11 @@ class Client(Thread):
 						pass
 					
 		else:
-			self.sock.send(self.get_length("Incorrect request!").encode('utf8'))
-			self.sock.send("Incorrect request!".encode('utf8'))
+			try:
+				self.sock.send(self.get_length("Incorrect request!").encode('utf8'))
+				self.sock.send("Incorrect request!".encode('utf8'))
+			except Exception as e:
+				print(e)
 
 		self.sock.close()
 
@@ -212,7 +217,6 @@ class Server:
 				print("user connected!")
 			except Exception as e:
 				print("server stopped accepting users!")
-				run = False
 			else:
 				client = Client(sock)
 				client.start()
@@ -221,9 +225,9 @@ class Server:
 # main code execution here
 
 def main():
-	request_handler = Request_queue()
-	livecode = Server(PORT)
-	request_handler.start()
-	livecode.start()
+		request_handler = Request_queue()
+		livecode = Server(PORT)
+		request_handler.start()
+		livecode.start()
 
 main()
