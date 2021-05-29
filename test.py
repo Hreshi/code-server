@@ -114,8 +114,10 @@ class Client:
 							voice_chat.start()
 						else:
 							notepad = Notepad(self)
-							sender = Thread(target = self.send_text, args = (notepad, )).start()
-							recver = Thread(target = self.recv_text, args = (notepad, )).start()
+							if self.init_req[0] == "create":
+								sender = Thread(target = self.send_text, args = (notepad, )).start()
+							if self.init_req[0] == "join":
+								recver = Thread(target = self.recv_text, args = (notepad, )).start()
 							notepad.run()
 		sys.exit(0)
 
@@ -147,15 +149,19 @@ class Client:
 
 	def send_text(self, notepad):
 		while self.run:
-			message = input("Enter message : ")
-			if message == "exit":
-				self.sock.close()
-				break
+			message = notepad.get_text()
+			# if len(message) == 0:
+			# 	continue
 			try:
 				self.sock.send(self.get_length(message).encode('utf8'))
 				self.sock.send((message).encode('utf8'))
 			except Exception as e:
 				print("[SEND:SERVER]![can't send to server]")
+			try:
+				sleep(0.1)
+			except Exception as e:
+				print(e)
+				self.run = False
 
 	def recv_text(self, notepad):
 		while self.run:
@@ -165,7 +171,7 @@ class Client:
 			except Exception as e:
 				print("[SEND:SERVER]![can't recv from server]")
 			else:
-				print(message)
+				notepad.set_text(message)
 
 class Notepad:
 
@@ -258,6 +264,12 @@ class Notepad:
 		self.__thisScrollBar.config(command=self.__thisTextArea.yview)	
 		self.__thisTextArea.config(yscrollcommand=self.__thisScrollBar.set)
 	
+	def get_text(self):
+		return self.__thisTextArea.get(1.0, "end-1c")
+
+	def set_text(self, message):
+		self.__thisTextArea.delete(1.0, 'end')
+		self.__thisTextArea.insert(1.0, message)
 		
 	def __quitApplication(self):
 		conn.run = False
