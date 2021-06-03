@@ -14,7 +14,7 @@ import os
 from tkinter import *
 from tkinter.messagebox import *
 from tkinter.filedialog import *
-HOST, PORT, BUFFER, FRAMES = "", 5000, 10, 500
+HOST, PORT, BUFFER, FRAMES = "4.tcp.ngrok.io:", 14362, 10, 500
 
 
 # voice chat is second thread in client
